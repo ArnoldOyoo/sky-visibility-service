@@ -1,11 +1,43 @@
 services:
+  redis:
+    image: redis:7-alpine
+    container_name: sky-visibility-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - sky-visibility-network
+
   app:
     build: .
+    container_name: sky-visibility-app
     ports:
       - "8000:8000"
     environment:
       - WEATHER_API_KEY=${WEATHER_API_KEY}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_DB=0
     env_file:
       - .env
+    depends_on:
+      redis:
+        condition: service_healthy
     volumes:
-      - ./app:/app
+      - ./app:/code/app
+    networks:
+      - sky-visibility-network
+
+volumes:
+  redis_data:
+
+networks:
+  sky-visibility-network:
+    driver: bridge

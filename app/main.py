@@ -1,10 +1,11 @@
 from fastapi import FastAPI
-from app.api.visibility import router
+from app.api.visibility import router as visibility_router
 from app.api.cache import router as cache_router
 
 app = FastAPI(title="Sky Visibility API")
 
-app.include_router(router)
+# Include routers
+app.include_router(visibility_router)
 app.include_router(cache_router)
 
 @app.get("/")
