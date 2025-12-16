@@ -59,7 +59,7 @@ class RedisCache:
         
         try:
             value = self.redis_client.get(key)
-            if value:
+            if value and isinstance(value, str):
                 return json.loads(value)
             return None
         except Exception as e:
@@ -103,9 +103,10 @@ class RedisCache:
             return 0
         
         try:
-            keys = self.redis_client.keys(pattern)
+            keys = list(self.redis_client.scan_iter(match=pattern))
             if keys:
-                return self.redis_client.delete(*keys)
+                deleted = self.redis_client.delete(*keys)
+                return deleted if isinstance(deleted, int) else 0
             return 0
         except Exception as e:
             print(f"Cache clear error: {e}")
@@ -117,7 +118,7 @@ class RedisCache:
             return {"enabled": False, "message": "Cache disabled"}
         
         try:
-            info = self.redis_client.info()
+            info: dict = self.redis_client.info()  # type: ignore
             return {
                 "enabled": True,
                 "connected_clients": info.get("connected_clients", 0),
